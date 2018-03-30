@@ -1,5 +1,5 @@
 var cubeRotation = 0.0;
-
+var octagons = 100;
 main();
 
 //
@@ -97,57 +97,59 @@ function initBuffers(gl) {
 
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-  // Now create an array of positions for the cube.
+  var positions = [];
+  console.log("Start");
+  for (var i = 0; i < octagons; i++) {
+    positions.push(
+      // Top face1
+       -1.0,  1.0, -1.0- 2*i,
+        0.0,  1.4, -1.0- 2*i,
+        0.0,  1.4,  1.0- 2*i,
+       -1.0,  1.0,  1.0- 2*i,
 
-  const positions = [
-    // Top face1
-    -1.0,  1.0, -10000.0,
-     0.0,  1.4, -10000.0,
-     0.0,  1.4,  10000.0,
-    -1.0,  1.0,  10000.0,
+       // Top face2
+        0.0,  1.4, -1.0-2*i,
+        1.0,  1.0, -1.0-2*i,
+        1.0,  1.0,  1.0-2*i,
+        0.0,  1.4,  1.0-2*i,
 
-    // Top face2
-     0.0,  1.4, -10000.0,
-     1.0,  1.0, -10000.0,
-     1.0,  1.0,  10000.0,
-     0.0,  1.4,  10000.0,
+       // Bottom face1
+       -1.0, -1.0, -1.0-2*i,
+        0.0, -1.4, -1.0-2*i,
+        0.0, -1.4,  1.0-2*i,
+       -1.0, -1.0,  1.0-2*i,
 
-    // Bottom face1
-    -1.0, -1.0, -10000.0,
-     0.0, -1.4, -10000.0,
-     0.0, -1.4,  10000.0,
-    -1.0, -1.0,  10000.0,
+       // Bottom face2
+        0.0, -1.4, -1.0-2*i,
+        1.0, -1.0, -1.0-2*i,
+        1.0, -1.0,  1.0-2*i,
+        0.0, -1.4,  1.0-2*i,
 
-    // Bottom face2
-     0.0, -1.4, -10000.0,
-     1.0, -1.0, -10000.0,
-     1.0, -1.0,  10000.0,
-     0.0, -1.4,  10000.0,
+       // R2*ight face1
+        1.4,  0.0, -1.0-2*i,
+        1.0,  1.0, -1.0-2*i,
+        1.0,  1.0,  1.0-2*i,
+        1.4,  0.0,  1.0-2*i,
 
-    // Right face1
-     1.4,  0.0, -10000.0,
-     1.0,  1.0, -10000.0,
-     1.0,  1.0,  10000.0,
-     1.4,  0.0,  10000.0,
+       // R2*ight face2
+        1.0, -1.0, -1.0-2*i,
+        1.4,  0.0, -1.0-2*i,
+        1.4,  0.0,  1.0-2*i,
+        1.0, -1.0,  1.0-2*i,
 
-    // Right face2
-     1.0, -1.0, -10000.0,
-     1.4,  0.0, -10000.0,
-     1.4,  0.0,  10000.0,
-     1.0, -1.0,  10000.0,
+       // Left face1
+       -1.4,  0.0, -1.0-2*i,
+       -1.4,  0.0,  1.0-2*i,
+       -1.0,  1.0,  1.0-2*i,
+       -1.0,  1.0, -1.0-2*i,
 
-    // Left face1
-    -1.4,  0.0, -10000.0,
-    -1.4,  0.0,  10000.0,
-    -1.0,  1.0,  10000.0,
-    -1.0,  1.0, -10000.0,
-
-    // Left face2
-    -1.0, -1.0, -10000.0,
-    -1.0, -1.0,  10000.0,
-    -1.4,  0.0,  10000.0,
-    -1.4,  0.0, -10000.0,
-  ];
+       // Left face2
+       -1.0, -1.0, -1.0-2*i,
+       -1.0, -1.0,  1.0-2*i,
+       -1.4,  0.0, -1.0-2*i,
+       -1.4,  0.0,  1.0-2*i,
+    )
+  }
 
   // Now pass the list of positions into WebGL to build the
   // shape. We do this by creating a Float32Array from the
@@ -169,16 +171,19 @@ function initBuffers(gl) {
     [0.3,  0.8,  1.0,  1.0],    // Left face: purple
   ];
 
+  var colors = [];
+  for (var i = 0; i < octagons; i++) {
+    for (var j = 0; j < faceColors.length; ++j) {
+      const c = faceColors[(j + Math.floor(Math.random() * 8)) % 8];
+
+      // Repeat each color four times for the four vertices of the face
+      colors = colors.concat(c, c, c, c);
+    }
+    }
+
   // Convert the array of colors into a table for all the vertices.
 
-  var colors = [];
 
-  for (var j = 0; j < faceColors.length; ++j) {
-    const c = faceColors[j];
-
-    // Repeat each color four times for the four vertices of the face
-    colors = colors.concat(c, c, c, c);
-  }
 
   const colorBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
@@ -194,17 +199,16 @@ function initBuffers(gl) {
   // indices into the vertex array to specify each triangle's
   // position.
 
-  const indices = [
-    0,  1,  2,      0,  2,  3,    // top1
-    4,  5,  6,      4,  6,  7,    // top2
-    8,  9,  10,     8,  10, 11,   // bottom1
-    12, 13, 14,     12, 14, 15,   // bottom2
-    16, 17, 18,     16, 18, 19,   // right1
-    20, 21, 22,     20, 22, 23,   // right2
-    24, 25, 26,     24, 26, 27,   // left1
-    28, 29, 30,     28, 30, 31,   // left2
-  ];
 
+  var indices = [];
+
+  for (var i = 0; i < octagons; i++) {
+    for(var j = 0; j < 8; j++ )
+    {
+      indices.push(32*i + 4*j, 32*i + 4*j + 1, 32*i + 4*j + 2, 32*i + 4*j, 32*i + 4*j + 2, 32*i + 4*j + 3);
+    }
+  }
+  console.log("sdfsd");
   // Now send the element array to GL
 
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
@@ -220,7 +224,7 @@ function initBuffers(gl) {
 //
 // Draw the scene.
 //
-camera_speed = -10000.0;
+camera_speed = 100.0;
 
 function drawScene(gl, programInfo, buffers, deltaTime) {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
@@ -242,7 +246,7 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
   const fieldOfView = 35 * Math.PI / 180;   // in radians
   const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
   const zNear = 0.1;
-  const zFar = 10.0;
+  const zFar = 50.0;
   const projectionMatrix = mat4.create();
 
   // note: glmatrix.js always has the first argument
@@ -259,7 +263,7 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
 
   // Now move the drawing position a bit to where we want to
   // start drawing the square.
-  camera_speed += 0.01;
+  camera_speed += 0.1;
 
   mat4.translate(modelViewMatrix,     // destination matrix
                  modelViewMatrix,     // matrix to translate
@@ -332,7 +336,7 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
       modelViewMatrix);
 
   {
-    const vertexCount = 48;
+    const vertexCount = 48 * octagons;
     const type = gl.UNSIGNED_SHORT;
     const offset = 0;
     gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
