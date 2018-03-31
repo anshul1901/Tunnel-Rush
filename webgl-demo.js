@@ -1,7 +1,16 @@
-var cubeRotation = 0.0;
 var xPosition = 0.0;
-var yPosition = 0.9;
+var yPosition = 1.0;
 var zPosition = 0.0;
+
+var xSpeed = 0.0;
+var ySpeed = 0.0;
+var zSpeed = 0.1;
+
+var xAcc = 0.0;
+var yAcc = 0.01;
+var zAcc = 0.0;
+
+var tunnelRotation = 0.0;
 
 main();
 
@@ -51,13 +60,25 @@ function main() {
     },
   };
 
-  Tunnel = tunnelConstructor(1000);
+  Tunnel = tunnelConstructor(100);
   Obstacles = obsConstructor(10);
 
   var buffers = [];
 
   buffers.push(initBuffers(gl, Tunnel));
   buffers.push(initBuffers(gl, Obstacles));
+
+  // Movement
+  document.addEventListener('keydown', function(event) {
+    if (event.keyCode == 37) {
+      tunnelRotation+=0.009;
+    } else if(event.keyCode == 39) {
+      tunnelRotation-=0.009;
+    } else if(event.keyCode == 38 && yPosition == 1.0) {
+      ySpeed = -0.2;
+    }
+  });
+
 
   var then = 0;
   function render(now) {
@@ -66,6 +87,7 @@ function main() {
     then = now;
     drawScene(gl, programInfo, buffers, deltaTime);
     // console.log(zPosition);
+
     requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
@@ -109,85 +131,105 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
   gl.depthFunc(gl.LEQUAL);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+  xPosition += xSpeed;
+  yPosition += ySpeed;
+  zPosition += zSpeed;
+
+  xSpeed += xAcc;
+  ySpeed += yAcc;
+  zSpeed += zAcc;
+
+  if (yPosition > 1.0) {
+    yPosition = 1.0
+  }
+  // else {
+  //   ySpeed = 0.0;
+  // }
+  if (zPosition < 150.0) {
+    zPosition == 0;
+  }
   for (var i in buffers) {
 
-    const fieldOfView = 35 * Math.PI / 180;
-    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-    const zNear = 0.1;
-    const zFar = 50.0;
-    const projectionMatrix = mat4.create();
+      const fieldOfView = 35 * Math.PI / 180;
+      const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+      const zNear = 0.1;
+      const zFar = 50.0;
+      const projectionMatrix = mat4.create();
 
-    mat4.perspective(projectionMatrix,
-                     fieldOfView,
-                     aspect,
-                     zNear,
-                     zFar);
+      mat4.perspective(projectionMatrix,
+                       fieldOfView,
+                       aspect,
+                       zNear,
+                       zFar);
 
-    const modelViewMatrix = mat4.create();
+      const modelViewMatrix = mat4.create();
 
-    zPosition += 0.1;
-    mat4.translate(modelViewMatrix, modelViewMatrix, [xPosition, yPosition, zPosition]);
-    mat4.rotate(modelViewMatrix, modelViewMatrix, cubeRotation, [0, 0, 0]);
-    mat4.rotate(modelViewMatrix, modelViewMatrix, cubeRotation * .7, [0, 0, 0]);
 
-    {
-      const numComponents = 3;
-      const type = gl.FLOAT;
-      const normalize = false;
-      const stride = 0;
-      const offset = 0;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffers[i].position);
-      gl.vertexAttribPointer(
-          programInfo.attribLocations.vertexPosition,
-          numComponents,
-          type,
-          normalize,
-          stride,
-          offset);
-      gl.enableVertexAttribArray(
-          programInfo.attribLocations.vertexPosition);
+
+
+      mat4.translate(modelViewMatrix, modelViewMatrix, [xPosition, yPosition, zPosition]);
+      mat4.rotate(modelViewMatrix, modelViewMatrix, tunnelRotation, [0, 0, 1]);
+      mat4.rotate(modelViewMatrix, modelViewMatrix, tunnelRotation, [0, 0, 1]);
+
+
+
+      {
+        const numComponents = 3;
+        const type = gl.FLOAT;
+        const normalize = false;
+        const stride = 0;
+        const offset = 0;
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers[i].position);
+        gl.vertexAttribPointer(
+            programInfo.attribLocations.vertexPosition,
+            numComponents,
+            type,
+            normalize,
+            stride,
+            offset);
+        gl.enableVertexAttribArray(
+            programInfo.attribLocations.vertexPosition);
+      }
+
+      {
+        const numComponents = 4;
+        const type = gl.FLOAT;
+        const normalize = false;
+        const stride = 0;
+        const offset = 0;
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers[i].color);
+        gl.vertexAttribPointer(
+            programInfo.attribLocations.vertexColor,
+            numComponents,
+            type,
+            normalize,
+            stride,
+            offset);
+        gl.enableVertexAttribArray(
+            programInfo.attribLocations.vertexColor);
+      }
+
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers[i].indices);
+
+      gl.useProgram(programInfo.program);
+
+      gl.uniformMatrix4fv(
+          programInfo.uniformLocations.projectionMatrix,
+          false,
+          projectionMatrix);
+      gl.uniformMatrix4fv(
+          programInfo.uniformLocations.modelViewMatrix,
+          false,
+          modelViewMatrix);
+
+      {
+        const vertexCount = buffers[i].number;
+        const type = gl.UNSIGNED_SHORT;
+        const offset = 0;
+        gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
+      }
+
     }
-
-    {
-      const numComponents = 4;
-      const type = gl.FLOAT;
-      const normalize = false;
-      const stride = 0;
-      const offset = 0;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffers[i].color);
-      gl.vertexAttribPointer(
-          programInfo.attribLocations.vertexColor,
-          numComponents,
-          type,
-          normalize,
-          stride,
-          offset);
-      gl.enableVertexAttribArray(
-          programInfo.attribLocations.vertexColor);
-    }
-
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers[i].indices);
-
-    gl.useProgram(programInfo.program);
-
-    gl.uniformMatrix4fv(
-        programInfo.uniformLocations.projectionMatrix,
-        false,
-        projectionMatrix);
-    gl.uniformMatrix4fv(
-        programInfo.uniformLocations.modelViewMatrix,
-        false,
-        modelViewMatrix);
-
-    {
-      const vertexCount = buffers[i].number;
-      const type = gl.UNSIGNED_SHORT;
-      const offset = 0;
-      gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
-    }
-
-  }
-  // cubeRotation += deltaTime;
 }
 
 function initShaderProgram(gl, vsSource, fsSource) {
